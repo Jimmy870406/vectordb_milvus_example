@@ -42,15 +42,6 @@ class Milvus:
     def embed(self, doc, embedding_model):
         return embedding_model.embedding(doc)
 
-    def embedding(self, documents, embedding_model):
-        embeddings = [self.embed(doc, embedding_model) for doc in documents]
-        entities = [
-            [str(i) for i in range(len(documents))],
-            [str(doc) for doc in documents],
-            embeddings
-        ]
-        return entities
-
     def search(self, collection_name, search_vectors, search_field, search_params):
         collection = Collection(name=collection_name)
         collection.load()

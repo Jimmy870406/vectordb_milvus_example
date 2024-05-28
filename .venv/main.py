@@ -43,8 +43,14 @@ if __name__ == "__main__":
         milvus_instance.list_collections()
 
         ## Insert data into Milvus
-        data = milvus_instance.embedding(docs, sentence_transformer)
-        insert_result = milvus_instance.insert(collection_name, data)
+        embeddings = [milvus_instance.embed(doc, sentence_transformer) for doc in docs]
+        entities = [
+            [str(i) for i in range(len(docs))],
+            [str(doc) for doc in docs],
+            embeddings
+        ]
+
+        insert_result = milvus_instance.insert(collection_name, entities)
         print(f"Insert result: {insert_result}")
 
         ## Create the index for Milvus, devide to 128 list
