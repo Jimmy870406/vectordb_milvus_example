@@ -1,26 +1,35 @@
+import argparse
+import os
+import sys
 from milvus import Milvus
 from pymilvus import FieldSchema, DataType
 from embedding.openai_embedding import Openai_Embedding_Model
 from embedding.sentence_transformer import Sentence_Transformer
+from utility.txt_parser import extract_file_to_array
 
 if __name__ == "__main__":
 
+    # Create the parser, add the argument for the path
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path', nargs='?', default=None, type=str, help='The path to the text file')
+    parser.add_argument('question', nargs='?', default=None, type=str, help='The question you want to ask')
+    args = parser.parse_args()
+
+    # Initialize the txt_path
+    txt_path = args.path if args.path else input("Please provide the path to the text file: ")
+    txt_path = txt_path if os.path.isabs(txt_path) else os.path.join(os.getcwd(), txt_path)
+
+    # Initialize the txt_path
+    question =  args.question if args.question else input("Please provide the question: ")
+
+    if not (os.path.isfile(txt_path) and txt_path.lower().endswith('.txt')):
+        print(f"Error: The path provided does not point to a valid text file: {txt_path}")
+        sys.exit(1)
+
+    # Extract the document from txt
+    docs = extract_file_to_array(txt_path)
     collection_name = "hello_milvus"
     sentence_transformers_dim = 384
-
-    # Define document
-    docs = [
-        "A group of vibrant parrots chatter loudly, sharing stories of their tropical adventures.",
-        "The mathematician found solace in numbers, deciphering the hidden patterns of the universe.",
-        "The robot, with its intricate circuitry and precise movements, assembles the devices swiftly.",
-        "The chef, with a sprinkle of spices and a dash of love, creates culinary masterpieces.",
-        "The ancient tree, with its gnarled branches and deep roots, whispers secrets of the past.",
-        "The detective, with keen observation and logical reasoning, unravels the intricate web of clues.",
-        "The sunset paints the sky with shades of orange, pink, and purple, reflecting on the calm sea.",
-        "In the dense forest, the howl of a lone wolf echoes, blending with the symphony of the night.",
-        "The dancer, with graceful moves and expressive gestures, tells a story without uttering a word.",
-        "In the quantum realm, particles flicker in and out of existence, dancing to the tunes of probability."
-    ]
 
     # Define fields for our collection
     fields = [
@@ -58,10 +67,12 @@ if __name__ == "__main__":
         ## nprobe -> How many cluster you want to base on to query data
         milvus_instance.create_index(collection_name, "embeddings", "IVF_FLAT", "L2", {"nlist": 128})
 
-        ## Query data from Milvus
-        query = "Give me some content about the ocean"
-        query_vector = milvus_instance.embed(query, sentence_transformer)
-        print(milvus_instance.search(collection_name, [query_vector], "embeddings", {"metric_type": "L2", "params": {"nprobe": 10}}))
+        ## Query data through question from Milvus
+        query_vector = milvus_instance.embed(question, sentence_transformer)
+        search_result = milvus_instance.search(collection_name, [query_vector], "embeddings", {"metric_type": "L2", "params": {"nprobe": 10}})
+
+        for idx, answer in enumerate(search_result[0]):
+            print(f"Top {idx}. {answer}")
 
         milvus_instance.drop_all(collection_name, f'pk in ["{insert_result.primary_keys[0]}", "{insert_result.primary_keys[1]}"]')
 

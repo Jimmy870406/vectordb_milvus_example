@@ -9,7 +9,7 @@ class Milvus:
         connections.connect("default",
                             uri=Config_Provider().milvus_uri,
                             token=Config_Provider().token)
-        print(f"Connecting to Milvus: {Config_Provider().milvus_uri}")
+        print(f"Connecting to Milvus: Success")
 
     def list_collections(self):
         print(utility.list_collections())
